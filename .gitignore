@@ -1,0 +1,26 @@
+# Environment
+.env*
+!.env.example
+
+# Python
+**/__pycache__/**
+*.pyc
+*.pyo
+.venv/
+dist/
+*.egg-info/
+
+# IDE
+**/.idea/**
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Dependencies
+poetry.lock
+
+# Claude Code
+.claude/
