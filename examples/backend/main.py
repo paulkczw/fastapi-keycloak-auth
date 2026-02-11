@@ -72,7 +72,7 @@ async def greeting(user: TokenPayload | None = Depends(get_current_user_optional
     """Public endpoint, with optional authentication"""
     if user:
         return {"message": f"Hallo {user.preferred_username}!"}
-    return {"message": "Hallo Gast!"}
+    return {"message": "Hello guest!"}
 
 
 # ============================================================================
@@ -83,7 +83,7 @@ async def greeting(user: TokenPayload | None = Depends(get_current_user_optional
 async def protected_data(user: TokenPayload = Depends(get_current_user)):
     """Protected endpoint, authentication required"""
     return {
-        "message": "Du hast Zugriff auf geschützte Daten!",
+        "message": "You dont have permission to view this page!",
         "user": {
             "id": user.sub,
             "email": user.email,
@@ -117,7 +117,7 @@ async def get_profile(user: TokenPayload = Depends(get_current_user)):
 async def admin_only(user: TokenPayload = Depends(require_role("admin"))):
     """Only for user with role admin"""
     return {
-        "message": f"Willkommen im Admin-Bereich, {user.preferred_username}!",
+        "message": f"Welcome admin, {user.preferred_username}!",
         "admin_data": {
             "users_count": 42,
             "active_sessions": 17,
@@ -129,7 +129,7 @@ async def admin_only(user: TokenPayload = Depends(require_role("admin"))):
 async def moderator_area(user: TokenPayload = Depends(require_any_role("admin", "moderator"))):
     """Only for users with role moderator or admin"""
     return {
-        "message": f"Moderator-Bereich für {user.preferred_username}",
+        "message": f"Welcome moderator, {user.preferred_username}",
         "your_roles": user.roles,
     }
 
@@ -138,11 +138,11 @@ async def moderator_area(user: TokenPayload = Depends(require_any_role("admin", 
 # Example: Custom business logic
 # ============================================================================
 
-# Fake Datenbank
+# Fake database
 TODOS = {
     "user1": [
-        {"id": 1, "title": "Einkaufen", "done": False},
-        {"id": 2, "title": "Sport machen", "done": True},
+        {"id": 1, "title": "Buy", "done": False},
+        {"id": 2, "title": "Play tennis", "done": True},
     ]
 }
 
@@ -180,13 +180,11 @@ async def create_todo(
 @auth_events.on(AuthEvent.LOGIN)
 async def on_login(data: LoginEventData):
     logging.info(f"User {data.user.email} logged in")
-    # DB-Eintrag erstellen, Welcome-Mail senden, etc.
 
 @auth_events.on(AuthEvent.LOGOUT)
 async def on_logout(data: LogoutEventData):
     if data.user:
         logging.info(f"User {data.user.email} logged out")
-    # Audit-Log, Cleanup, etc.
 
 @auth_events.on(AuthEvent.REFRESH)
 async def on_refresh(data):
@@ -194,7 +192,6 @@ async def on_refresh(data):
 
 @auth_events.on(AuthEvent.TOKEN_VERIFIED)
 async def on_request(data):
-    # Wird bei jedem authentifizierten Request aufgerufen
     logging.info(f"Request von {data.user.email}")
 
 @auth_events.on(AuthEvent.TOKEN_INVALID)
