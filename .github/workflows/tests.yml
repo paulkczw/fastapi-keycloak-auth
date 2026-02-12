@@ -1,0 +1,36 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v4
+
+      - name: Setup a local virtual environment
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+
+      - name: Install dependencies
+        run: poetry install --with test
+
+      - name: Run tests
+        run: poetry run pytest tests/ -v --tb=short
+
+      - name: Run tests with coverage
+        run: poetry run pytest tests/ --cov=fastapi_keycloak_auth --cov-report=term-missing --cov-fail-under=80
