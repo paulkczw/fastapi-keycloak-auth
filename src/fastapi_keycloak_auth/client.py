@@ -90,7 +90,10 @@ class KeycloakClient:
         if isinstance(aud, str):
             aud = [aud]
 
-        valid_audiences = {self.settings.client_id, "account"}
+        valid_audiences = [self.settings.audience]
+        if "," in self.settings.audience:
+            valid_audiences.extend(a.strip() for a in self.settings.audience.split(","))
+
         if aud and not any(a in valid_audiences for a in aud):
             raise JWTError(f"Invalid audience: {aud}")
 
