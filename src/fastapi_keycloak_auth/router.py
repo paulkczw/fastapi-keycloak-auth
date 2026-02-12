@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
+from jose import JWTError
 
 from .dependencies import (
     get_current_user,
@@ -19,7 +20,7 @@ from .events import (
     LoginEventData,
     LogoutEventData,
     RefreshEventData,
-    auth_events,
+    auth_events, TokenInvalidEventData,
 )
 from .models import AuthStatus, TokenPayload, User
 
@@ -136,13 +137,15 @@ def create_auth_router(
                 samesite=settings.cookie_samesite,
             )
 
-        # Emit LOGIN event
-        if auth_events.has_handlers(AuthEvent.LOGIN):
             try:
                 user = await client.verify_token(tokens.access_token)
-                await auth_events.emit(AuthEvent.LOGIN, LoginEventData(user=user, tokens=tokens))
-            except Exception:
-                pass  # Don't fail login if event handler fails
+                # Emit LOGIN event
+                if auth_events.has_handlers(AuthEvent.LOGIN):
+                    await auth_events.emit(AuthEvent.LOGIN, LoginEventData(user=user, tokens=tokens))
+            except JWTError as e:
+                # Emit TOKEN_INVALID event
+                if auth_events.has_handlers(AuthEvent.TOKEN_INVALID):
+                    auth_events.emit(AuthEvent.TOKEN_INVALID, TokenInvalidEventData(error=str(e), token=tokens.access_token))
 
         return response
 
@@ -164,14 +167,16 @@ def create_auth_router(
 
         # Try to get user for event (may be None if token expired)
         user = None
-        if auth_events.has_handlers(AuthEvent.LOGOUT):
-            token = request.cookies.get(settings.cookie_name)
-            if token:
-                try:
-                    user = await client.verify_token(token)
-                except Exception:
-                    pass
-            await auth_events.emit(AuthEvent.LOGOUT, LogoutEventData(user=user))
+        token = request.cookies.get(settings.cookie_name)
+        if token:
+            try:
+                user = await client.verify_token(token)
+            except JWTError as e:
+                if auth_events.has_handlers(AuthEvent.TOKEN_INVALID):
+                    await auth_events.emit(AuthEvent.TOKEN_INVALID, TokenInvalidEventData(error=str(e), token=token))
+
+            if auth_events.has_handlers(AuthEvent.LOGOUT):
+                await auth_events.emit(AuthEvent.LOGOUT, LogoutEventData(user=user))
 
         # Use the logout callback URL from settings (includes auth_path)
         callback_url = settings.logout_callback_url
