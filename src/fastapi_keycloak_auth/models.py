@@ -77,3 +77,14 @@ class AuthStatus(BaseModel):
 
     authenticated: bool
     user: User | None = None
+
+
+class OpenIdConfiguration(BaseModel):
+    """OpenID Connect configuration from Keycloak."""
+
+    issuer: str
+    authorization_endpoint: str
+    token_endpoint: str
+    userinfo_endpoint: str
+    jwks_uri: str
+    end_session_endpoint: str
