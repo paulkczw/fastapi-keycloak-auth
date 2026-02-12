@@ -6,7 +6,7 @@ import httpx
 from jose import JWTError, jwt
 
 from .config import KeycloakSettings
-from .models import TokenPayload, TokenResponse
+from .models import TokenPayload, TokenResponse, OpenIdConfiguration
 
 
 class KeycloakClient:
@@ -14,13 +14,25 @@ class KeycloakClient:
 
     def __init__(self, settings: KeycloakSettings):
         self.settings = settings
+        self._openid_configuration: OpenIdConfiguration | None = None
         self._jwks: dict | None = None
+
+    async def get_openid_configuration(self) -> OpenIdConfiguration:
+        """Fetch and cache OpenID configuration from Keycloak."""
+        if self._openid_configuration is None:
+            async with httpx.AsyncClient(verify=self.settings.ssl_context) as client:
+                response = await client.get(self.settings.configuration_url)
+                response.raise_for_status()
+                self._openid_configuration = OpenIdConfiguration(**response.json())
+        return self._openid_configuration
 
     async def get_jwks(self) -> dict:
         """Fetch and cache JWKS from Keycloak."""
         if self._jwks is None:
+            openid_configuration = await self.get_openid_configuration()
+
             async with httpx.AsyncClient(verify=self.settings.ssl_context) as client:
-                response = await client.get(self.settings.jwks_url)
+                response = await client.get(openid_configuration.jwks_uri)
                 response.raise_for_status()
                 self._jwks = response.json()
         return self._jwks
@@ -31,9 +43,11 @@ class KeycloakClient:
 
     async def exchange_code(self, code: str) -> TokenResponse:
         """Exchange authorization code for tokens."""
+        openid_configuration = await self.get_openid_configuration()
+
         async with httpx.AsyncClient(verify=self.settings.ssl_context) as client:
             response = await client.post(
-                self.settings.token_url,
+                openid_configuration.token_endpoint,
                 data={
                     "grant_type": "authorization_code",
                     "client_id": self.settings.client_id,
@@ -53,9 +67,11 @@ class KeycloakClient:
 
     async def refresh_tokens(self, refresh_token: str) -> TokenResponse:
         """Refresh access token using refresh token."""
+        openid_configuration = await self.get_openid_configuration()
+
         async with httpx.AsyncClient(verify=self.settings.ssl_context) as client:
             response = await client.post(
-                self.settings.token_url,
+                openid_configuration.token_endpoint,
                 data={
                     "grant_type": "refresh_token",
                     "client_id": self.settings.client_id,
@@ -101,9 +117,11 @@ class KeycloakClient:
 
     async def get_userinfo(self, access_token: str) -> dict:
         """Fetch user info from Keycloak userinfo endpoint."""
+        openid_configuration = await self.get_openid_configuration()
+
         async with httpx.AsyncClient(verify=self.settings.ssl_context) as client:
             response = await client.get(
-                self.settings.userinfo_url,
+                openid_configuration.userinfo_endpoint,
                 headers={"Authorization": f"Bearer {access_token}"},
             )
             response.raise_for_status()
