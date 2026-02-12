@@ -127,8 +127,15 @@ async def get_current_user_optional(request: Request) -> TokenPayload | None:
         return None
 
     try:
-        return await client.verify_token(token)
-    except JWTError:
+        result = await client.verify_token(token)
+        # Emit TOKEN_VERIFIED event
+        if auth_events.has_handlers(AuthEvent.TOKEN_VERIFIED):
+            await auth_events.emit(AuthEvent.TOKEN_VERIFIED, TokenVerifiedEventData(user=result))
+        return result
+    except JWTError as e:
+        # Emit TOKEN_INVALID event
+        if auth_events.has_handlers(AuthEvent.TOKEN_INVALID):
+            await auth_events.emit(AuthEvent.TOKEN_INVALID, TokenInvalidEventData(error=str(e), token=token))
         return None
 
 
