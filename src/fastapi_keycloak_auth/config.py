@@ -64,29 +64,9 @@ class KeycloakSettings(BaseSettings):
         return f"{self.server_url}/realms/{self.realm}"
 
     @property
-    def jwks_url(self) -> str:
-        """Return the JWKS endpoint URL."""
-        return f"{self.issuer}/protocol/openid-connect/certs"
-
-    @property
-    def authorization_url(self) -> str:
-        """Return the authorization endpoint URL."""
-        return f"{self.issuer}/protocol/openid-connect/auth"
-
-    @property
-    def token_url(self) -> str:
-        """Return the token endpoint URL."""
-        return f"{self.issuer}/protocol/openid-connect/token"
-
-    @property
-    def logout_url(self) -> str:
-        """Return the logout endpoint URL."""
-        return f"{self.issuer}/protocol/openid-connect/logout"
-
-    @property
-    def userinfo_url(self) -> str:
-        """Return the userinfo endpoint URL."""
-        return f"{self.issuer}/protocol/openid-connect/userinfo"
+    def configuration_url(self):
+        """Return the Keycloak OpenID configuration URL."""
+        return f"{self.issuer}/.well-known/openid-configuration"
 
     @property
     def callback_url(self) -> str:
