@@ -73,6 +73,8 @@ def create_auth_router(
         user is redirected back to /auth/callback.
         """
         settings = get_settings()
+        client = get_keycloak_client()
+        openid_configuration = await client.get_openid_configuration()
 
         params = {
             "client_id": settings.client_id,
@@ -85,7 +87,7 @@ def create_auth_router(
         if redirect:
             params["state"] = redirect
 
-        return RedirectResponse(f"{settings.authorization_url}?{urlencode(params)}")
+        return RedirectResponse(f"{openid_configuration.authorization_endpoint}?{urlencode(params)}")
 
     @router.get("/callback")
     async def callback(
@@ -158,6 +160,7 @@ def create_auth_router(
         """
         settings = get_settings()
         client = get_keycloak_client()
+        openid_configuration = await client.get_openid_configuration()
 
         # Try to get user for event (may be None if token expired)
         user = None
@@ -180,7 +183,7 @@ def create_auth_router(
             "post_logout_redirect_uri": callback_url,
         }
 
-        response = RedirectResponse(f"{settings.logout_url}?{urlencode(params)}")
+        response = RedirectResponse(f"{openid_configuration.end_session_endpoint}?{urlencode(params)}")
         response.delete_cookie(settings.cookie_name)
         response.delete_cookie(settings.refresh_cookie_name)
 
