@@ -4,7 +4,7 @@ import os
 import time
 
 # Set env vars BEFORE any fastapi_keycloak_auth imports (auth_router triggers get_settings() at import)
-TEST_SERVER_URL = "https://keycloak.example.com"
+TEST_SERVER_URL = "https://keycloak.example.local"
 TEST_REALM = "test-realm"
 TEST_CLIENT_ID = "test-client"
 TEST_CLIENT_SECRET = "test-secret"
@@ -134,7 +134,7 @@ def sample_token_payload() -> TokenPayload:
     """Example TokenPayload for unit tests."""
     return TokenPayload(
         sub="test-user-id",
-        email="test@example.com",
+        email="test@example.local",
         email_verified=True,
         preferred_username="testuser",
         name="Test User",
