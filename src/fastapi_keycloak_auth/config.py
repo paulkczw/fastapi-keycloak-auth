@@ -26,6 +26,7 @@ class KeycloakSettings(BaseSettings):
     realm: str = Field(description="Keycloak realm name")
     client_id: str = Field(description="OAuth2 client ID")
     client_secret: str = Field(description="OAuth2 client secret")
+    audience: str = Field(description="For which audience the access token should be issued")
 
     # SSL settings
     ssl_verify: bool = Field(default=True, description="Verify SSL certificates")
