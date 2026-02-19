@@ -18,8 +18,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v4
+      - name: Install Poetry
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install poetry
+          poetry --version
 
       - name: Setup a local virtual environment
         run: |
