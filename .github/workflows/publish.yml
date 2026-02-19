@@ -11,6 +11,10 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/fastapi-keycloak-oidc
 
     steps:
       - uses: actions/checkout@v4
@@ -19,9 +23,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
           
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v4
+      - name: Install Poetry
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install poetry
+          poetry --version
         
       - name: Setup a local virtual environment
         run: |
@@ -34,4 +42,5 @@ jobs:
       - name: Build package
         run: poetry build
 
-      
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
